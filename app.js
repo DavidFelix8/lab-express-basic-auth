@@ -7,10 +7,18 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const sassMiddleware = require('node-sass-middleware');
 const serveFavicon = require('serve-favicon');
+const dotenv = require('dotenv');
+const expressSession = require('express-session');
+const ConnectMongo = require('connect-mongo');
+
+const mongoStore = ConnectMongo(expressSession);
 
 const indexRouter = require('./routes/index');
+const authenticationRouter = require('./routes/authentication');
 
 const app = express();
+
+const mongoose = require('mongoose');
 
 // Setup view engine
 app.set('views', join(__dirname, 'views'));
@@ -32,7 +40,27 @@ app.use(
   })
 );
 
+app.use(
+  expressSession({
+    secret: process.env.SESSION_SECRET,
+    resave: true,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 15 * 24 * 60 * 60 * 1000
+    },
+    store: new mongoStore({
+      mongooseConnection: mongoose.connection,
+      ttl: 60 * 60
+    })
+  })
+);
+
+const deserializeUser = require('./middleware/deserialize-user');
+
+app.use(deserializeUser);
+
 app.use('/', indexRouter);
+app.use('/authentication', authenticationRouter);
 
 // Catch missing routes and forward to error handler
 app.use((req, res, next) => {
