@@ -9,7 +9,7 @@ router.get('/', (req, res, next) => {
   res.render('index', { title: 'Hello World!' });
 });
 
-router.get('/main', (req, res, next) => {
+router.get('/main', routeGuard, (req, res, next) => {
   res.render('main');
 });
 
